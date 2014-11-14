@@ -756,6 +756,16 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
     // FIXME This API should take an AID and slot ID
     public void setDataAllowed(boolean allowed, Message result) {
+        if(mRilVersion < 10 && mInstanceId == null) {
+            if (result != null) {
+                CommandException ex = new CommandException(
+                    CommandException.Error.REQUEST_NOT_SUPPORTED);
+                AsyncResult.forMessage(result, null, ex);
+                result.sendToTarget();
+            }
+            return;
+        }
+
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_ALLOW_DATA, result);
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
                 + " " + allowed);
@@ -4967,7 +4977,6 @@ public class RIL extends BaseCommands implements CommandsInterface {
     @Override
     public void iccTransmitApduLogicalChannel(int channel, int cla, int instruction,
             int p1, int p2, int p3, String data, Message response) {
-
         if(mRilVersion < 10) {
             if (response != null) {
                 CommandException ex = new CommandException(
@@ -5017,7 +5026,6 @@ public class RIL extends BaseCommands implements CommandsInterface {
      */
     private void iccTransmitApduHelper(int rilCommand, int channel, int cla,
             int instruction, int p1, int p2, int p3, String data, Message response) {
-
         if(mRilVersion < 10) {
             if (response != null) {
                 CommandException ex = new CommandException(
