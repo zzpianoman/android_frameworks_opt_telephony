@@ -554,38 +554,7 @@ public class CdmaLteServiceStateTracker extends CdmaServiceStateTracker {
 
         if ((hasCdmaDataConnectionChanged || hasDataRadioTechnologyChanged)) {
             notifyDataRegStateRilRadioTechnologyChanged();
-            if (isIwlanFeatureAvailable()
-                    && (ServiceState.RIL_RADIO_TECHNOLOGY_IWLAN
-                        == mSS.getRilDataRadioTechnology())) {
-                mPhone.notifyDataConnection(Phone.REASON_IWLAN_AVAILABLE);
-                needNotifyData = false;
-                mIwlanRatAvailable = true;
-            } else {
-                processIwlanToWwanTransition(mSS);
-
-                needNotifyData = true;
-                mIwlanRatAvailable = false;
-            }
-        }
-
-        if (needNotifyData) {
             mPhone.notifyDataConnection(null);
-        }
-
-        if (hasCdmaDataConnectionAttached || has4gHandoff) {
-            mAttachedRegistrants.notifyRegistrants();
-        }
-
-        if (hasRoamingOn) {
-            mRoamingOnRegistrants.notifyRegistrants();
-        }
-
-        if (hasRoamingOff) {
-            mRoamingOffRegistrants.notifyRegistrants();
-        }
-
-        if (hasLocationChanged) {
-            mPhone.notifyLocationChanged();
         }
 
         ArrayList<CellInfo> arrayCi = new ArrayList<CellInfo>();
