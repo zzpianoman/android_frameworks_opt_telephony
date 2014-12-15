@@ -77,6 +77,7 @@ import com.android.internal.telephony.dataconnection.DataProfile;
 import com.android.internal.telephony.TelephonyDevController;
 import com.android.internal.telephony.HardwareConfig;
 
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.FileDescriptor;
@@ -2293,6 +2294,26 @@ public class RIL extends BaseCommands implements CommandsInterface {
         rr.mParcel.writeIntArray(param);
         send(rr);
     }
+	     
+    public Boolean isMobileDataConnected() {
+        try {
+            Process p1 = java.lang.Runtime.getRuntime().exec("ifconfig rmnet1");
+            int returnVal = p1.waitFor();
+            boolean reachable = (returnVal==0);
+            if(reachable){
+                System.out.println("Mobile Network Up");
+                return reachable;
+            }
+            else{
+                System.out.println("Mobile Network Down");
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+        return false;
+    	}
 
     /**
      * {@inheritDoc}
@@ -2302,15 +2323,22 @@ public class RIL extends BaseCommands implements CommandsInterface {
         RILRequest rr = RILRequest.obtain(
                 RILConstants.RIL_REQUEST_SET_PREFERRED_NETWORK_TYPE, response);
 
+	if (SystemProperties.getInt("ro.telephony.toroRIL", 0) == 1) {	
+		if (isMobileDataConnected() == false) {
+			networkType=4;
+		}
+	}
+
         rr.mParcel.writeInt(1);
         rr.mParcel.writeInt(networkType);
-
+	
         mPreferredNetworkType = networkType;
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest)
                 + " : " + networkType);
 
         send(rr);
+			
     }
 
     /**
