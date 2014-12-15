@@ -2294,18 +2294,18 @@ public class RIL extends BaseCommands implements CommandsInterface {
         rr.mParcel.writeIntArray(param);
         send(rr);
     }
-	
-     public Boolean isOnline() {
+	     
+    public Boolean isMobileDataConnected() {
         try {
-            Process p1 = java.lang.Runtime.getRuntime().exec("ping -c 1 www.google.com");
+            Process p1 = java.lang.Runtime.getRuntime().exec("ifconfig rmnet1");
             int returnVal = p1.waitFor();
             boolean reachable = (returnVal==0);
             if(reachable){
-                System.out.println("Internet access");
+                System.out.println("Mobile Network Up");
                 return reachable;
             }
             else{
-                System.out.println("No Internet access");
+                System.out.println("Mobile Network Down");
             }
 
         } catch (Exception e) {
@@ -2324,7 +2324,7 @@ public class RIL extends BaseCommands implements CommandsInterface {
                 RILConstants.RIL_REQUEST_SET_PREFERRED_NETWORK_TYPE, response);
 
 	if (SystemProperties.getInt("ro.telephony.toroRIL", 0) == 1) {	
-		if (isOnline() == false) {
+		if (isMobileDataConnected() == false) {
 			networkType=4;
 		}
 	}
