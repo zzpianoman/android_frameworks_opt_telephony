@@ -2323,12 +2323,6 @@ public class RIL extends BaseCommands implements CommandsInterface {
         RILRequest rr = RILRequest.obtain(
                 RILConstants.RIL_REQUEST_SET_PREFERRED_NETWORK_TYPE, response);
 
-	if (SystemProperties.getInt("ro.telephony.toroRIL", 0) == 1) {	
-		if (isMobileDataConnected() == false) {
-			networkType=4;
-		}
-	}
-
         rr.mParcel.writeInt(1);
         rr.mParcel.writeInt(networkType);
 	
