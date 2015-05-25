@@ -135,6 +135,12 @@ public class DctController extends Handler {
         }
     }
 
+    private void releasePendingRequest(NetworkRequest networkRequest) {
+        for (int i = 0; i < mPhoneNum; i++) {
+            ((TelephonyNetworkFactory)mNetworkFactory[i]).releasePendingRequest(networkRequest);
+        }
+    }
+
     private OnSubscriptionsChangedListener mOnSubscriptionsChangedListener =
             new OnSubscriptionsChangedListener() {
         @Override
@@ -536,6 +542,7 @@ public class DctController extends Handler {
         logd("releaseNetwork request=" + request + ", requestInfo=" + requestInfo);
 
         mRequestInfos.remove(request.requestId);
+        releasePendingRequest(request);
         releaseRequest(requestInfo);
         processRequests();
         return PhoneConstants.APN_REQUEST_STARTED;
@@ -588,16 +595,14 @@ public class DctController extends Handler {
         logd("onProcessRequest phoneId=" + phoneId
                 + ", activePhoneId=" + activePhoneId);
 
-        if (activePhoneId == -1 || activePhoneId == phoneId) {
-            Iterator<Integer> iterator = mRequestInfos.keySet().iterator();
-            while (iterator.hasNext()) {
-                RequestInfo requestInfo = mRequestInfos.get(iterator.next());
+        if (phoneId != -1 && activePhoneId != -1 && activePhoneId != phoneId) {
+            mDcSwitchAsyncChannel[activePhoneId].disconnectAllSync();
+        } else {
+            for (RequestInfo requestInfo : mRequestInfos.values()) {
                 if (getRequestPhoneId(requestInfo.request) == phoneId && !requestInfo.executed) {
                     mDcSwitchAsyncChannel[phoneId].connectSync(requestInfo);
                 }
             }
-        } else {
-            mDcSwitchAsyncChannel[activePhoneId].disconnectAllSync();
         }
     }
 
@@ -697,20 +702,14 @@ public class DctController extends Handler {
 
     private int getTopPriorityRequestPhoneId() {
         RequestInfo retRequestInfo = null;
-        int phoneId = 0;
+        int phoneId = -1;
         int priority = -1;
 
-        //TODO: Handle SIM Switch
-        for (int i=0; i<mPhoneNum; i++) {
-            Iterator<Integer> iterator = mRequestInfos.keySet().iterator();
-            while (iterator.hasNext()) {
-                RequestInfo requestInfo = mRequestInfos.get(iterator.next());
-                logd("selectExecPhone requestInfo = " + requestInfo);
-                if (getRequestPhoneId(requestInfo.request) == i &&
-                        priority < requestInfo.priority) {
-                    priority = requestInfo.priority;
-                    retRequestInfo = requestInfo;
-                }
+        for (RequestInfo requestInfo : mRequestInfos.values()) {
+            logd("selectExecPhone requestInfo = " + requestInfo);
+            if (priority < requestInfo.priority) {
+                priority = requestInfo.priority;
+                retRequestInfo = requestInfo;
             }
         }
 
@@ -1228,6 +1227,11 @@ public class DctController extends Handler {
                     }
                 }
             }
+        }
+
+        public void releasePendingRequest(NetworkRequest networkRequest) {
+            log("releasePendingRequest " + networkRequest);
+            mPendingReq.remove(networkRequest.requestId);
         }
 
         private boolean isValidRequest(NetworkRequest n) {

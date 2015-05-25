@@ -143,6 +143,7 @@ public class SubscriptionController extends ISub.Stub {
     private static HashMap<Integer, Integer> mSlotIdxToSubId = new HashMap<Integer, Integer>();
     private static int mDefaultFallbackSubId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     private static int mDefaultPhoneId = 0;
+    private boolean mSubInfoReady = false;
 
     private int[] colorArr;
 
@@ -266,7 +267,7 @@ public class SubscriptionController extends ISub.Stub {
     }
 
     private boolean isSubInfoReady() {
-        return mSlotIdxToSubId.size() > 0;
+        return mSubInfoReady || mSlotIdxToSubId.size() > 0;
     }
 
     private SubscriptionController(Phone phone) {
@@ -1180,37 +1181,21 @@ public class SubscriptionController extends ISub.Stub {
     @Override
     public int getPhoneId(int subId) {
         if (VDBG) printStackTrace("[getPhoneId] subId=" + subId);
-        int phoneId;
 
         if (subId == SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) {
             subId = getDefaultSubId();
-            if (DBG) logdl("[getPhoneId] asked for default subId=" + subId);
         }
 
         if (subId >= DUMMY_SUB_ID_BASE) {
-            logd("getPhoneId,  received summy subId " + subId);
             return subId - DUMMY_SUB_ID_BASE;
         } else if (subId < 0) {
-            phoneId = (int) (-1 - subId);
-            if (VDBG) logdl("[getPhoneId]- map subId=" + subId + " phoneId=" + phoneId);
-            return phoneId;
+            return (int) (-1 - subId);
         }
 
         if (!SubscriptionManager.isValidSubscriptionId(subId)) {
-            if (DBG) {
-                logdl("[getPhoneId]- invalid subId return="
-                        + SubscriptionManager.INVALID_PHONE_INDEX);
-            }
             return SubscriptionManager.INVALID_PHONE_INDEX;
         }
 
-
-        int size = mSlotIdxToSubId.size();
-        if (size == 0) {
-            phoneId = mDefaultPhoneId;
-            if (DBG) logdl("[getPhoneId]- no sims, returning default phoneId=" + phoneId);
-            return phoneId;
-        }
 
         // FIXME: Assumes phoneId == slotId
         for (Entry<Integer, Integer> entry: mSlotIdxToSubId.entrySet()) {
@@ -1218,16 +1203,11 @@ public class SubscriptionController extends ISub.Stub {
             int sub = entry.getValue();
 
             if (subId == sub) {
-                logd("[getPhoneId]- return ="+sim);
                 return sim;
             }
         }
 
-        phoneId = mDefaultPhoneId;
-        if (DBG) {
-            logdl("[getPhoneId]- subId=" + subId + " not found return default phoneId=" + phoneId);
-        }
-        return phoneId;
+        return mDefaultPhoneId;
 
     }
 
@@ -1267,6 +1247,8 @@ public class SubscriptionController extends ISub.Stub {
         }
 
         mSlotIdxToSubId.clear();
+        mSubInfoReady = false;
+
         if (DBG) logdl("[clearSubInfo]- clear size=" + size);
         return size;
     }
@@ -1530,7 +1512,19 @@ public class SubscriptionController extends ISub.Stub {
         }
     }
 
+    public void handleSubscriptionInfoReady() {
+        mSubInfoReady = true;
+        notifySubscriptionInfoChanged();
+    }
+
     public void clearDefaultsForInactiveSubIds() {
+        // Don't use isSubInfoReady() here, as we don't want to clear out anything
+        // before info of all SIMs is populated
+        if (!mSubInfoReady) {
+            if (DBG) logdl("[clearDefaultsForInactiveSubIds] SIM info not yet ready");
+            return;
+        }
+
         final List<SubscriptionInfo> records = getActiveSubscriptionInfoList();
         if (DBG) logdl("[clearDefaultsForInactiveSubIds] records: " + records);
         if (shouldDefaultBeCleared(records, getDefaultDataSubId())) {
