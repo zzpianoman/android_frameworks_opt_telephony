@@ -70,7 +70,7 @@ public class SmsUsageMonitor {
     private static final String SHORT_CODE_PATH = "/data/misc/sms/codes";
 
     /** Default checking period for SMS sent without user permission. */
-    private static final int DEFAULT_SMS_CHECK_PERIOD = 15 * 60 * 1000;      // 15 minutes
+    private static final int DEFAULT_SMS_CHECK_PERIOD = 60000;      // 1 minute
 
     /** Default number of SMS sent in checking period without user permission. */
     private static final int DEFAULT_SMS_MAX_COUNT = 30;
@@ -273,11 +273,11 @@ public class SmsUsageMonitor {
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             ContentResolver resolver = mContext.getContentResolver();
-            mMaxAllowed = Settings.Secure.getInt(resolver,
+            mMaxAllowed = Settings.Global.getInt(resolver,
                     Settings.Global.SMS_OUTGOING_CHECK_MAX_COUNT,
                     DEFAULT_SMS_MAX_COUNT);
 
-            mCheckPeriod = Settings.Secure.getInt(resolver,
+            mCheckPeriod = Settings.Global.getInt(resolver,
                     Settings.Global.SMS_OUTGOING_CHECK_INTERVAL_MS,
                     DEFAULT_SMS_CHECK_PERIOD);
         }
@@ -289,9 +289,9 @@ public class SmsUsageMonitor {
 
             ContentObserver globalObserver = new SmsLimitObserver(this, context);
 
-            resolver.registerContentObserver(Settings.Secure.getUriFor(
+            resolver.registerContentObserver(Settings.Global.getUriFor(
                     Settings.Global.SMS_OUTGOING_CHECK_MAX_COUNT), false, globalObserver);
-            resolver.registerContentObserver(Settings.Secure.getUriFor(
+            resolver.registerContentObserver(Settings.Global.getUriFor(
                     Settings.Global.SMS_OUTGOING_CHECK_INTERVAL_MS), false, globalObserver);
         }
     }
