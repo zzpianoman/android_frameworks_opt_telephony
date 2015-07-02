@@ -779,7 +779,8 @@ public final class DcTracker extends DcTrackerBase {
             state = mPhone.getCallTracker().getState();
         }
         boolean allowed =
-                    (attachedState || mAutoAttachOnCreation.get()) &&
+                    (attachedState || (mAutoAttachOnCreation.get() &&
+                            (mPhone.getSubId() == dataSub))) &&
                     recordsLoaded &&
                     (state == PhoneConstants.State.IDLE ||
                     (subscriptionFromNv || recordsLoaded) &&
@@ -1507,12 +1508,12 @@ public final class DcTracker extends DcTrackerBase {
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
 
         // Get current sub id.
-        int subId = SubscriptionManager.getDefaultDataSubId();
+        int subId = mPhone.getSubId();
         intent.putExtra(PhoneConstants.SUBSCRIPTION_KEY, subId);
 
         if (DBG) {
             log("startAlarmForReconnect: delay=" + delay + " action=" + intent.getAction()
-                    + " apn=" + apnContext);
+                    + " apn=" + apnContext + " subId=" + subId);
         }
 
         PendingIntent alarmIntent = PendingIntent.getBroadcast (mPhone.getContext(), 0,
