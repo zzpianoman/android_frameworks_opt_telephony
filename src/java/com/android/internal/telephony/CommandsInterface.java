@@ -1967,7 +1967,7 @@ public interface CommandsInterface {
      */
     public void unregisterForRadioCapabilityChanged(Handler h);
 
-
+    /**
      * Start LCE (Link Capacity Estimation) service with a desired reporting interval.
      *
      * @param reportIntervalMs
